@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>typo.yestee</title>
+<style>
+  :root { --a:#7c5cff; --b:#00e0ff; --c:#ff4fd8; }
+  * { box-sizing:border-box; margin:0; }
+  body { min-height:100vh; font-family:system-ui,Segoe UI,sans-serif; color:#fff; padding:20px;
+    background:linear-gradient(-45deg,#0b0b1a,#1a0f3a,#06222f,#25093a); background-size:400% 400%;
+    animation:bg 18s ease infinite; background-attachment:fixed; }
+  @keyframes bg { 0%{background-position:0 50%} 50%{background-position:100% 50%} 100%{background-position:0 50%} }
+  #warn { display:none; max-width:900px; margin:0 auto 18px; padding:14px 18px; border-radius:14px; font-size:14px; line-height:1.6;
+    background:rgba(255,170,0,.14); border:1px solid rgba(255,170,0,.5); }
+  #warn b { color:#ffc04d; }
+  #top { display:flex; flex-direction:column; align-items:center; margin-top:18vh; transition:.4s; }
+  body.searched #top { margin-top:0; flex-direction:row; flex-wrap:wrap; gap:18px; justify-content:center; }
+  h1 { font-size:clamp(48px,10vw,90px); font-weight:800; letter-spacing:-3px; cursor:pointer;
+    background:linear-gradient(90deg,var(--b),var(--a),var(--c)); -webkit-background-clip:text; background-clip:text;
+    color:transparent; transition:.4s; }
+  body.searched h1 { font-size:34px; letter-spacing:-1px; }
+  .sub { opacity:.6; margin:4px 0 28px; } body.searched .sub { display:none; }
+  form { width:min(640px,100%); position:relative; }
+  input[type=text], input[type=password], #q { width:100%; padding:18px 120px 18px 24px; font-size:18px; color:#fff; outline:none;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); border-radius:60px; backdrop-filter:blur(14px); transition:.25s; }
+  #q:focus { border-color:var(--b); box-shadow:0 0 0 4px rgba(0,224,255,.15),0 0 40px rgba(124,92,255,.35); }
+  ::placeholder { color:rgba(255,255,255,.45); }
+  .go { position:absolute; right:7px; top:7px; bottom:7px; padding:0 24px; border:0; border-radius:50px; font-weight:700; color:#fff; cursor:pointer;
+    background:linear-gradient(90deg,var(--a),var(--c)); }
+  #gear { position:fixed; top:14px; right:16px; z-index:120; width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.1); color:#fff; font-size:22px; cursor:pointer; backdrop-filter:blur(10px); }
+  #gear:hover { background:var(--a); }
+  #tabs { display:flex; gap:10px; justify-content:center; margin:22px 0 10px; flex-wrap:wrap; }
+  #tabs button { padding:9px 20px; border-radius:30px; cursor:pointer; color:#fff; font-size:14px;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); transition:.2s; }
+  #tabs button:hover { background:rgba(255,255,255,.16); }
+  #tabs button.on { background:linear-gradient(90deg,var(--a),var(--b)); border-color:transparent; font-weight:700; }
+
+  #player { display:none; max-width:1000px; margin:20px auto 0; border-radius:18px; overflow:hidden; background:#000;
+    border:1px solid rgba(255,255,255,.18); box-shadow:0 10px 60px rgba(124,92,255,.4); }
+  #player.show { display:block; }
+  #player .bar { display:flex; align-items:center; gap:8px; padding:8px 12px; background:rgba(20,20,40,.95); font-size:14px; }
+  #player .bar .t { flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; opacity:.85; }
+  #player .bar button { border:0; padding:6px 14px; border-radius:20px; cursor:pointer; color:#fff; font-size:13px;
+    background:rgba(255,255,255,.12); white-space:nowrap; }
+  #player .bar button:hover { background:var(--a); }
+  #player .box { position:relative; padding-top:56.25%; }
+  #player iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+  #player.mini { position:fixed; right:18px; bottom:18px; width:380px; max-width:90vw; margin:0; z-index:99; }
+  #player.mini .t { display:none; }
+
+  #results { max-width:1100px; margin:20px auto; }
+  .heading { margin:6px 4px 14px; font-size:20px; font-weight:700; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .heading button { padding:7px 16px; border:0; border-radius:20px; color:#fff; background:rgba(255,255,255,.12); cursor:pointer; font-size:13px; }
+  .heading button:hover { background:#d33; }
+  .card { display:flex; gap:16px; padding:16px; margin-bottom:12px; border-radius:16px; text-decoration:none; color:#fff;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); transition:.2s; cursor:pointer; }
+  .card:hover { background:rgba(255,255,255,.12); transform:translateY(-2px); }
+  .card img { width:90px; height:90px; object-fit:cover; border-radius:10px; flex:none; }
+  .card h3 { color:var(--b); font-size:18px; margin-bottom:4px; }
+  .card p { opacity:.75; font-size:14px; line-height:1.45; } .card small { opacity:.5; }
+  .vgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:18px; }
+  .v { cursor:pointer; border-radius:14px; overflow:hidden; background:rgba(255,255,255,.05); transition:.2s; position:relative; }
+  .v:hover { transform:translateY(-4px); background:rgba(255,255,255,.1); }
+  .v img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
+  .v .i { padding:10px 12px 14px; }
+  .v b { font-size:15px; line-height:1.35; margin-bottom:4px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .v span { font-size:12px; opacity:.6; }
+  .v .later { position:absolute; top:8px; right:8px; border:0; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700;
+    color:#fff; cursor:pointer; background:rgba(0,0,0,.7); backdrop-filter:blur(6px); }
+  .v .later:hover, .v .later.saved { background:linear-gradient(90deg,var(--a),var(--c)); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
+  .grid a { display:block; border-radius:14px; overflow:hidden; background:rgba(255,255,255,.06); }
+  .grid img { width:100%; height:170px; object-fit:cover; display:block; transition:.25s; }
+  .grid a:hover img { transform:scale(1.07); }
+  .grid span { display:block; padding:8px 10px; font-size:12px; opacity:.7; }
+  .links { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+  .links a { padding:22px 10px; text-align:center; border-radius:16px; color:#fff; text-decoration:none; font-weight:600;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); transition:.2s; }
+  .links a:hover { background:linear-gradient(135deg,var(--a),var(--c)); transform:translateY(-3px); }
+  .msg { text-align:center; opacity:.9; padding:26px; line-height:1.7; }
+  .setup { background:rgba(255,79,216,.12); border:1px solid rgba(255,79,216,.4); border-radius:16px; }
+  .msg a { color:var(--b); }
+  .msg button, .btn { padding:10px 22px; border:0; border-radius:30px; color:#fff; font-weight:700; cursor:pointer;
+    background:linear-gradient(90deg,var(--a),var(--c)); margin-top:8px; }
+  #gsc { background:#fff; border-radius:16px; padding:10px; color:#222; }
+  footer { text-align:center; opacity:.35; font-size:12px; margin:30px 0; }
+  #src { text-align:center; font-size:12px; opacity:.45; margin-top:14px; }
+
+  #modal { position:fixed; inset:0; z-index:200; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.65); padding:16px; }
+  #modal.show { display:flex; }
+  #panel { width:min(520px,100%); background:#14142b; border:1px solid rgba(255,255,255,.2); border-radius:22px; padding:26px; max-height:92vh; overflow:auto; }
+  #panel h2 { margin-bottom:6px; } #panel p { opacity:.65; font-size:13px; line-height:1.5; margin-bottom:14px; }
+  #panel label { display:block; font-size:13px; margin:14px 0 6px; font-weight:600; }
+  #panel input { padding:13px 18px; font-size:15px; border-radius:14px; }
+  #panel .row { display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
+  #panel .row .btn { margin:0; } #panel .ghost { background:rgba(255,255,255,.12); }
+  @media(max-width:600px){ .card{flex-direction:column} #gear{top:8px;right:8px} }
+</style>
+</head>
+<body>
+
+<button id="gear" title="Settings">&#9881;</button>
+
+<div id="modal"><div id="panel">
+  <h2>Settings</h2>
+  <p>Everything here is optional. Saved only in this browser.</p>
+  <label>YouTube API key (makes YouTube search reliable)</label>
+  <input type="password" id="kYT" placeholder="AIza...">
+  <label>Google Search engine ID (for the Web tab)</label>
+  <input type="text" id="kCX" placeholder="e.g. a1b2c3d4e5f6g7h8i">
+  <div class="row">
+    <button class="btn" id="saveCfg">Save</button>
+    <button class="btn ghost" id="closeCfg">Cancel</button>
+    <button class="btn ghost" id="clearCfg">Clear keys</button>
+  </div>
+</div></div>
+
+<div id="warn">
+  <b>Heads up:</b> you opened this page as a file on your computer, so YouTube will show <b>Error 153</b>.
+  Fix: rename the file to <b>index.html</b>, drag it onto <b>app.netlify.com/drop</b>, and open the link it gives you.
+</div>
+
+<div id="top">
+  <div style="text-align:center">
+    <h1 onclick="location.reload()">typo.yestee</h1>
+    <p class="sub">search the whole web, watch YouTube, never leave</p>
+  </div>
+  <form id="f">
+    <input id="q" type="text" autocomplete="off" autofocus placeholder="Search, or paste a YouTube video or playlist link...">
+    <button class="go" type="submit">Search</button>
+  </form>
+</div>
+
+<div id="tabs"></div>
+
+<div id="player">
+  <div class="bar">
+    <span class="t" id="ptitle"></span>
+    <button id="saveBtn">+ Save</button>
+    <button id="miniBtn">Mini player</button>
+    <button id="closeBtn">Close</button>
+  </div>
+  <div class="box" id="box"></div>
+</div>
+
+<div id="results"></div>
+<div id="src"></div>
+<footer>typo.yestee &bull; press / to search</footer>
+
+<script>
+/* ====== EDIT THESE: your own quick links ====== */
+const QUICK_LINKS = [
+  ["YouTube","https://www.youtube.com"],["Google","https://www.google.com"],["Gmail","https://mail.google.com"],
+  ["Maps","https://maps.google.com"],["Reddit","https://www.reddit.com"],["GitHub","https://github.com"],
+  ["Spotify","https://open.spotify.com"],["Netflix","https://www.netflix.com"],["Twitch","https://www.twitch.tv"],
+  ["ChatGPT","https://chatgpt.com"],["Claude","https://claude.ai"],["Wikipedia","https://wikipedia.org"]
+];
+/* ====== OPTIONAL: a key that every visitor uses (lock it to your site first!). Leave empty if unsure. ====== */
+const DEFAULT_KEY = "";
+/* ====== Free public search servers (used when no YouTube key is set) ====== */
+const SERVERS = [
+  {t:"piped",     u:"https://pipedapi.kavin.rocks"},
+  {t:"invidious", u:"https://yewtu.be"},
+  {t:"invidious", u:"https://inv.nadeko.net"},
+  {t:"piped",     u:"https://pipedapi.adminforge.de"},
+  {t:"invidious", u:"https://invidious.nerdvpn.de"}
+];
+/* ============================================== */
+
+const $ = id => document.getElementById(id);
+const res = $("results"), q = $("q");
+const TABS = ["Web","YouTube","Watch Later","History","Wikipedia","Images","Books","Quick Links"];
+let tab = "Web", lastQ = "", cur = null;
+
+/* warn if opened as a local file (causes YouTube Error 153) */
+if (location.protocol === "file:") $("warn").style.display = "block";
+
+/* ---------- storage ---------- */
+const mem = {};
+const store = {
+  get(k, d){ try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? (mem[k] ?? d) : v; } catch(e){ return mem[k] ?? d; } },
+  set(k, v){ mem[k] = v; try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+};
+
+/* ---------- settings ---------- */
+let CFG = Object.assign({ yt:"", cx:"" }, store.get("typoCfg", {}));
+if (!CFG.yt && DEFAULT_KEY) CFG.yt = DEFAULT_KEY;
+function openCfg(){ $("kYT").value = CFG.yt === DEFAULT_KEY ? "" : CFG.yt; $("kCX").value = CFG.cx; $("modal").classList.add("show"); }
+$("gear").onclick = openCfg;
+$("closeCfg").onclick = () => $("modal").classList.remove("show");
+$("modal").onclick = e => { if (e.target.id === "modal") $("modal").classList.remove("show"); };
+$("saveCfg").onclick = () => { store.set("typoCfg", { yt:$("kYT").value.trim(), cx:$("kCX").value.trim() }); location.reload(); };
+$("clearCfg").onclick = () => { store.set("typoCfg", {}); location.reload(); };
+
+/* ---------- helpers ---------- */
+function el(tag, props, kids){ const e = document.createElement(tag); Object.assign(e, props||{}); (kids||[]).forEach(k => e.appendChild(k)); return e; }
+function msg(html, cls){ res.innerHTML = ""; res.appendChild(el("div",{className:"msg "+(cls||""), innerHTML:html})); }
+function decode(s){ const t = document.createElement("textarea"); t.innerHTML = s; return t.value; }
+const thumb = id => "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
+function drawTabs(){
+  $("tabs").innerHTML = "";
+  TABS.forEach(t => {
+    const b = el("button",{textContent:t, className: t === tab ? "on" : ""});
+    b.onclick = () => { tab = t; drawTabs(); if (["Quick Links","YouTube","Watch Later","History"].includes(t) || lastQ) run(); };
+    $("tabs").appendChild(b);
+  });
+}
+
+/* ---------- watch later + history ---------- */
+const inLater = id => store.get("later", []).some(v => v.id === id);
+function toggleLater(v){
+  let l = store.get("later", []);
+  if (l.some(x => x.id === v.id)) { l = l.filter(x => x.id !== v.id); store.set("later", l); return false; }
+  l.unshift({ id:v.id, title:v.title, channel:v.channel }); store.set("later", l); return true;
+}
+function addHistory(v){
+  let h = store.get("hist", []).filter(x => x.id !== v.id);
+  h.unshift({ id:v.id, title:v.title, channel:v.channel });
+  store.set("hist", h.slice(0, 100));
+}
+
+/* ---------- player (stays on this page) ---------- */
+function ytId(text){
+  const m = text.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([\w-]{11})/i);
+  return m ? m[1] : null;
+}
+/* one place that builds the player, with the Error 153 fix (referrerPolicy) */
+function mountPlayer(src, title){
+  $("box").innerHTML = "";
+  $("box").appendChild(el("iframe",{
+    src: src,
+    allow:"autoplay; encrypted-media; picture-in-picture; fullscreen",
+    allowFullscreen:true,
+    referrerPolicy:"strict-origin-when-cross-origin"
+  }));
+  $("ptitle").textContent = title || "Now playing";
+  $("player").classList.add("show");
+  document.body.classList.add("searched");
+  if (!$("player").classList.contains("mini")) $("player").scrollIntoView({behavior:"smooth", block:"start"});
+}
+function refreshSave(){ $("saveBtn").textContent = cur && inLater(cur.id) ? "Saved \u2713" : "+ Save"; }
+function play(v){
+  cur = v;
+  mountPlayer("https://www.youtube.com/embed/"+v.id+"?autoplay=1&rel=0&playsinline=1", v.title);
+  refreshSave(); addHistory(v);
+}
+function playList(listId){
+  cur = null;
+  mountPlayer("https://www.youtube.com/embed/videoseries?list="+listId+"&autoplay=1&rel=0", "Playlist");
+  refreshSave();
+}
+async function playLink(id){
+  const v = { id, title:"YouTube video", channel:"" };
+  try {
+    const d = await (await fetch("https://www.youtube.com/oembed?format=json&url=https://www.youtube.com/watch?v="+id)).json();
+    if (d.title) { v.title = d.title; v.channel = d.author_name || ""; }
+  } catch(e){}
+  play(v);
+}
+$("closeBtn").onclick = () => { $("box").innerHTML = ""; $("player").classList.remove("show","mini"); $("miniBtn").textContent = "Mini player"; };
+$("miniBtn").onclick = () => { const m = $("player").classList.toggle("mini"); $("miniBtn").textContent = m ? "Expand" : "Mini player"; };
+$("saveBtn").onclick = () => { if (cur) { toggleLater(cur); refreshSave(); if (tab === "Watch Later") run(); } };
+
+/* ---------- video grid ---------- */
+function vgrid(list, title, clearKey){
+  res.innerHTML = "";
+  const head = el("div",{className:"heading"},[ el("span",{textContent:title}) ]);
+  if (clearKey && list.length) {
+    head.appendChild(el("button",{textContent:"Clear all", onclick:() => { if (confirm("Clear everything in this list?")) { store.set(clearKey, []); run(); } }}));
+  }
+  res.appendChild(head);
+  if (!list.length) { res.appendChild(el("div",{className:"msg",textContent:"Nothing here yet."})); return; }
+  const g = el("div",{className:"vgrid"});
+  list.forEach(v => {
+    const lb = el("button",{className:"later", textContent: inLater(v.id) ? "Saved \u2713" : "+ Later"});
+    if (inLater(v.id)) lb.classList.add("saved");
+    lb.onclick = e => {
+      e.stopPropagation();
+      const on = toggleLater(v);
+      lb.textContent = on ? "Saved \u2713" : "+ Later"; lb.classList.toggle("saved", on);
+      if (cur && cur.id === v.id) refreshSave();
+      if (tab === "Watch Later") run();
+    };
+    const card = el("div",{className:"v"},[
+      el("img",{src:thumb(v.id), alt:"", loading:"lazy"}), lb,
+      el("div",{className:"i"},[ el("b",{textContent:v.title}), el("span",{textContent:v.channel||""}) ])
+    ]);
+    card.onclick = () => play(v);
+    g.appendChild(card);
+  });
+  res.appendChild(g);
+}
+
+/* ---------- YouTube search ---------- */
+async function timed(url){
+  const c = new AbortController(), t = setTimeout(() => c.abort(), 6000);
+  try { const r = await fetch(url, {signal:c.signal}); if (!r.ok) throw 0; return await r.json(); }
+  finally { clearTimeout(t); }
+}
+async function viaKey(term){
+  const key = encodeURIComponent(CFG.yt);
+  let u;
+  if (term) u = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=24&key="+key+"&q="+encodeURIComponent(term);
+  else {
+    const region = (navigator.language.split("-")[1] || "US").toUpperCase();
+    u = "https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=24&regionCode="+region+"&key="+key;
+  }
+  const d = await (await fetch(u)).json();
+  if (d.error) throw new Error(d.error.message);
+  return d.items.map(v => ({ id: term ? v.id.videoId : v.id, title: decode(v.snippet.title), channel: decode(v.snippet.channelTitle) }));
+}
+async function viaFree(term){
+  const region = (navigator.language.split("-")[1] || "US").toUpperCase();
+  for (const s of SERVERS) {
+    try {
+      let list;
+      if (s.t === "piped") {
+        const d = await timed(term ? s.u+"/search?filter=videos&q="+encodeURIComponent(term) : s.u+"/trending?region="+region);
+        const items = Array.isArray(d) ? d : d.items;
+        list = items.filter(x => x.url && x.url.includes("v=")).map(x => ({ id:x.url.split("v=")[1].slice(0,11), title:x.title, channel:x.uploaderName }));
+      } else {
+        const d = await timed(term ? s.u+"/api/v1/search?type=video&q="+encodeURIComponent(term) : s.u+"/api/v1/trending?region="+region);
+        list = d.filter(x => x.videoId).map(x => ({ id:x.videoId, title:x.title, channel:x.author }));
+      }
+      if (list.length) { $("src").textContent = "via " + new URL(s.u).hostname; return list; }
+    } catch(e){}
+  }
+  throw new Error("none");
+}
+async function youtube(term){
+  msg("Loading...");
+  $("src").textContent = "";
+  try {
+    const list = CFG.yt ? await viaKey(term) : await viaFree(term);
+    if (!list.length) return msg("No videos found.");
+    vgrid(list, term ? "Results for \u201c"+term+"\u201d" : "Trending now");
+  } catch(e){
+    msg("<b>Couldn't load videos right now.</b><br>Add a YouTube key in settings for reliable search, or <b>paste any YouTube link</b> above to play it directly.<br><button onclick='openCfg()'>Open settings</button>", "setup");
+  }
+}
+
+/* ---------- WEB (Google Programmable Search) ---------- */
+let cseReady = false;
+function webSearch(term){
+  if (!CFG.cx) return msg("<b>Web search isn't switched on yet.</b><br>Add your Search engine ID in settings.<br><button onclick='openCfg()'>Open settings</button>", "setup");
+  res.innerHTML = '<div id="gsc"></div>';
+  const doSearch = () => {
+    try {
+      google.search.cse.element.render({div:"gsc", tag:"searchresults-only", gname:"typo"});
+      google.search.cse.element.getElement("typo").execute(term);
+    } catch(e){ msg("Couldn't load Google results. Check your ID or host the file online."); }
+  };
+  if (cseReady) return doSearch();
+  window.__gcse = { parsetags:"explicit", callback: () => { cseReady = true; doSearch(); } };
+  const s = document.createElement("script");
+  s.src = "https://cse.google.com/cse.js?cx=" + encodeURIComponent(CFG.cx); s.async = true; document.head.appendChild(s);
+}
+
+/* ---------- WIKIPEDIA ---------- */
+async function wiki(term){
+  msg("Searching...");
+  const u = "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=12&prop=pageimages|extracts&exintro=1&explaintext=1&exchars=260&exlimit=max&piprop=thumbnail&pithumbsize=200&format=json&origin=*&gsrsearch=" + encodeURIComponent(term);
+  const d = await (await fetch(u)).json();
+  if (!d.query) return msg("No results found.");
+  const pages = Object.values(d.query.pages).sort((a,b) => a.index - b.index);
+  res.innerHTML = "";
+  pages.forEach(p => {
+    const kids = [];
+    if (p.thumbnail) kids.push(el("img",{src:p.thumbnail.source, alt:""}));
+    kids.push(el("div",{},[ el("h3",{textContent:p.title}), el("p",{textContent:p.extract||""}), el("small",{textContent:"en.wikipedia.org"}) ]));
+    res.appendChild(el("a",{className:"card", href:"https://en.wikipedia.org/?curid="+p.pageid, target:"_blank", rel:"noopener"}, kids));
+  });
+}
+
+/* ---------- IMAGES (Wikimedia Commons) ---------- */
+async function images(term){
+  msg("Searching...");
+  const u = "https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=30&prop=imageinfo&iiprop=url&iiurlwidth=360&format=json&origin=*&gsrsearch=" + encodeURIComponent(term);
+  const d = await (await fetch(u)).json();
+  if (!d.query) return msg("No images found.");
+  const pages = Object.values(d.query.pages).sort((a,b) => a.index - b.index).filter(p => p.imageinfo);
+  const g = el("div",{className:"grid"});
+  pages.forEach(p => {
+    const i = p.imageinfo[0];
+    g.appendChild(el("a",{href:i.descriptionurl, target:"_blank", rel:"noopener"},[
+      el("img",{src:i.thumburl||i.url, loading:"lazy", alt:""}),
+      el("span",{textContent:p.title.replace(/^File:/,"").replace(/\.\w+$/,"")})
+    ]));
+  });
+  res.innerHTML = ""; res.appendChild(g);
+}
+
+/* ---------- BOOKS (Open Library) ---------- */
+async function books(term){
+  msg("Searching...");
+  const d = await (await fetch("https://openlibrary.org/search.json?limit=14&q=" + encodeURIComponent(term))).json();
+  if (!d.docs || !d.docs.length) return msg("No books found.");
+  res.innerHTML = "";
+  d.docs.forEach(b => {
+    const kids = [];
+    if (b.cover_i) kids.push(el("img",{src:"https://covers.openlibrary.org/b/id/"+b.cover_i+"-M.jpg", alt:""}));
+    kids.push(el("div",{},[
+      el("h3",{textContent:b.title}),
+      el("p",{textContent:(b.author_name||["Unknown author"]).slice(0,3).join(", ") + (b.first_publish_year ? " - " + b.first_publish_year : "")}),
+      el("small",{textContent:"openlibrary.org"})
+    ]));
+    res.appendChild(el("a",{className:"card", href:"https://openlibrary.org"+b.key, target:"_blank", rel:"noopener"}, kids));
+  });
+}
+
+/* ---------- QUICK LINKS ---------- */
+function quick(){
+  const g = el("div",{className:"links"});
+  QUICK_LINKS.forEach(([n,u]) => g.appendChild(el("a",{textContent:n, href:u, target:"_blank", rel:"noopener"})));
+  res.innerHTML = ""; res.appendChild(g);
+}
+
+/* ---------- RUN ---------- */
+async function run(){
+  document.body.classList.add("searched");
+  if (tab !== "YouTube") $("src").textContent = "";
+  try {
+    if (tab === "Quick Links") quick();
+    else if (tab === "Watch Later") vgrid(store.get("later", []), "Watch later");
+    else if (tab === "History") vgrid(store.get("hist", []), "History", "hist");
+    else if (tab === "YouTube") await youtube(lastQ);
+    else if (tab === "Web") webSearch(lastQ);
+    else if (tab === "Wikipedia") await wiki(lastQ);
+    else if (tab === "Images") await images(lastQ);
+    else await books(lastQ);
+  } catch(e){ msg("Something went wrong. Check your internet and try again."); }
+}
+
+$("f").addEventListener("submit", e => {
+  e.preventDefault();
+  const text = q.value.trim();
+  const id = ytId(text);
+  if (id) { playLink(id); return; }
+  const pl = text.match(/[?&]list=([\w-]{10,})/);
+  if (pl && /youtube\.com/.test(text)) { playList(pl[1]); return; }
+  if (!text) return;
+  lastQ = text;
+  if (tab === "Watch Later" || tab === "History" || tab === "Quick Links") { tab = "YouTube"; drawTabs(); }
+  run();
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "/" && document.activeElement.tagName !== "INPUT") { e.preventDefault(); q.focus(); q.select(); }
+  if (e.key === "Escape") $("modal").classList.remove("show");
+});
+drawTabs();
+</script>
+</body>
+</html>
